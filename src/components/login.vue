@@ -25,7 +25,6 @@
 </template>
 
 <script>
-import Web3 from "web3";
 import { createClient, getClient } from "@reservoir0x/reservoir-kit-client";
 import { ethers } from "ethers";
 export default {
@@ -33,23 +32,21 @@ export default {
   data() {
     return {
       types: "pledge",
-      web3: undefined,
     };
   },
   mounted() {
   },
   methods: {
     async buyNFT() {
-      var web3 = new Web3(window.ethereum);
-      let Client = createClient({
+      const reservoirClient = createClient({
         apiBase: "https://api.reservoir.tools",
         // apiKey: "YOUR_API_KEY",
-        source: "opensea.io",
+        source: "demo.market",
       });
-      const accounts = await web3.eth.getAccounts();
-      var address = accounts[0];
-      var signer = new ethers.VoidSigner(address, Client);
-      getClient()?.actions.buyToken({
+      const provider = new ethers.providers.Web3Provider(window.ethereum)
+      const signer = provider.getSigner()
+
+      reservoirClient.actions.buyToken({
         tokens: [
           {
             tokenId: 2,
@@ -63,32 +60,27 @@ export default {
       });
     },
     async getWeb3() {
-      var web3 = new Web3(window.ethereum);
-      this.web3 = new Web3(window.ethereum);
-      var that = this;
-      if (typeof window.ethereum === "undefined") {
-        this.$message({
-          message: this.$t("navbar.meat"),
-          duration: 2000,
-          type: "warning",
-        });
-      } else {
-        await window.ethereum
-          .send("eth_requestAccounts")
-          .catch(function (reason) {
-            if (reason.code == 4001) {
-              that.$message({
+      try {
+        if (typeof window.ethereum === "undefined") {
+          this.$message({
+            message: this.$t("navbar.meat"),
+            duration: 2000,
+            type: "warning",
+          });
+        } else {
+          const provider = new ethers.providers.Web3Provider(window.ethereum)
+
+          // MetaMask requires requesting permission to connect users accounts
+          await provider.send("eth_requestAccounts", []);
+        }
+      } catch (e) {
+        if (e.code == 4001) {
+              this.$message({
                 message: "User rejected the request.",
                 duration: 2000,
                 type: "warning",
               });
             }
-          })
-          .then(function (accounts) {
-            if (accounts) {
-              console.log(accounts, "accounts");
-            }
-          });
       }
     },
   },
